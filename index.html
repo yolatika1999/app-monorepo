@@ -1,0 +1,172 @@
+<!doctype html><html font-size="16px"><head><meta charset="utf-8"/><meta httpequiv="X-UA-Compatible" content="IE=edge"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover"/><title>OneKey</title><meta name="theme-color" content="#ffffff"/><style>/* add global styles to packages/shared/src/web/index.css */</style><script>// >>>>>>> automatic copy code from preload-html-head.js <<<<<<<<<
+            // oxlint-disable unicorn/prefer-global-this
+/* eslint-disable unicorn/prefer-global-this */
+
+/*
+- packages/shared/src/web/index.html.ejs
+- packages/kit/src/store/reducers/settings.ts # setThemePreloadToLocalStorage
+- apps/ext/src/assets/preload-html-head.js
+ */
+(function () {
+  // Keep startup time stamp for ext without relying on inline scripts (blocked by CSP).
+  if (typeof window.$$onekeyStartupTimeAt === 'undefined') {
+    window.$$onekeyStartupTimeAt = Date.now();
+  }
+
+  // $$onekeyPerfTrace start ----------------------------------------------
+  window.$$onekeyPerfTrace = {
+    timeline: [],
+    log: ({ name, payload }) => {
+      const lastStat =
+        window.$$onekeyPerfTrace.timeline[
+          window.$$onekeyPerfTrace.timeline.length - 1
+        ];
+      const perfNow = window.performance.now();
+      const time = new Date().toLocaleString();
+      window.$$onekeyPerfTrace.timeline.push({
+        lag: parseInt(String(lastStat ? perfNow - lastStat.elapsed : 0), 10),
+        name,
+        time,
+        elapsed: parseInt(String(perfNow), 10),
+        payload,
+      });
+      // keep limited array length to avoid memory leak
+      window.$$onekeyPerfTrace.timeline =
+        window.$$onekeyPerfTrace.timeline.slice(-200);
+    },
+  };
+  window.$$onekeyPerfTrace?.log({
+    name: 'APP_START: preload-html-head.js start',
+  });
+  // $$onekeyPerfTrace end ----------------------------------------------
+
+  // Record html render time for ext without inline scripts.
+  // (The element exists by DOMContentLoaded at the latest.)
+  try {
+    document.addEventListener(
+      'DOMContentLoaded',
+      () => {
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+          rootElement.setAttribute(
+            'data-html-render-time',
+            Date.now().toString(),
+          );
+        }
+      },
+      { once: true },
+    );
+  } catch (_error) {
+    // noop
+  }
+
+  // themePreload start ----------------------------------------------
+  const theme = localStorage.getItem('ONEKEY_THEME_PRELOAD');
+  // packages/components/tamagui.config.ts
+  // lightColors.bgApp
+  const lightColor = '#ffffff';
+  // packages/components/tamagui.config.ts
+  // darkColors.bgApp
+  const darkColor = '#0f0f0f';
+  function applyThemeColor(color) {
+    document.documentElement.style.backgroundColor = color;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', color);
+    }
+  }
+  if (theme === 'dark') {
+    applyThemeColor(darkColor);
+  } else if (theme === 'light') {
+    applyThemeColor(lightColor);
+  } else if (window.matchMedia) {
+    const color = window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? darkColor
+      : lightColor;
+    applyThemeColor(color);
+  } else {
+    applyThemeColor(lightColor);
+  }
+  // themePreload end ----------------------------------------------
+
+  // optimizeResize start ----------------------------------------------
+  /* TEST CODE
+const handler = ()=>console.log('ffffff');
+window.addEventListener('resize', handler);
+window.removeEventListener('resize',handler);
+   */
+  function debounce(func, timeout = 600) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        func.apply(this, args);
+      }, timeout);
+    };
+  }
+  function optimizeResize() {
+    const resizeEventMap = new Map();
+    window.$$onekeyWindowResizeEventMap = resizeEventMap;
+    // @ts-ignore
+    window.addEventListenerOld = window.addEventListener;
+    window.removeEventListenerOld = window.removeEventListener;
+    window.addEventListener = (eventName, handler) => {
+      if (eventName === 'resize') {
+        const debouncedHandler = debounce(handler, 300);
+        resizeEventMap.set(handler, debouncedHandler);
+        window.addEventListenerOld(eventName, debouncedHandler);
+      } else {
+        // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        window.addEventListenerOld(eventName, handler);
+      }
+    };
+    window.removeEventListener = (eventName, handler) => {
+      if (eventName === 'resize') {
+        const debouncedHandler = resizeEventMap.get(handler);
+        if (debouncedHandler) {
+          resizeEventMap.delete(handler);
+          window.removeEventListenerOld(eventName, debouncedHandler);
+        }
+      } else {
+        // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        window.removeEventListenerOld(eventName, handler);
+      }
+    };
+  }
+
+  try {
+    optimizeResize();
+  } catch (_error) {
+    // const e = error as Error | undefined;
+  } finally {
+    // noop
+  }
+  // optimizeResize end ----------------------------------------------
+})();</script><script>if (typeof window.$$onekeyStartupTimeAt === 'undefined') {
+            window.$$onekeyStartupTimeAt = Date.now();
+          }</script><link rel="icon" href="https://app.onekeytest.com/favicon.png" integrity="sha384-sT0QzRGveBWOFMGIwBOIlndwOZs/ZcqHiB9Nsgk8hDv5y+mVvkF5TpGDR3ek/UtS" crossorigin="anonymous"><script defer="defer" src="https://app.onekeytest.com/vendor-react.a5bc7e3213.bundle.js" integrity="sha384-BGP+yZjEcm3OOa7759i+Bl8i496AyIEtlUKxTPw2H1GL5tkWYQu4y2jq25frRUr9" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/vendor-lodash.5d8d3cec37.bundle.js" integrity="sha384-WzJP9E+MwOCFT3AaaGBEfWNG/TACSysvJK7PnSONS4/aX/yRJ5pZgbjFoU6cHbX+" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/vendor-network.d17036b1eb.bundle.js" integrity="sha384-XXqJzSRzo1l5j/sqLJe+5SXaNQxmIPYEclIXkDhH8PCCEFl1eu+yHMLHLqhfPQnN" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/vendor-crypto.cdd60c62.23cea597c0.bundle.js" integrity="sha384-WZs6FECRbEG7qegCCjlNGszqqOJWucc65E/RQk63+KRY5CtkSRpdFsJyj/DAL8W2" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/vendor-crypto.49d0a293.7ab578473b.bundle.js" integrity="sha384-hoA2aIk5xD4tQqBXDNbmuw+hDg1+BLgDO4a1XSn9/RbYx5JVO3GdzDHy/wXPJip8" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/vendor-crypto.2b4841d6.9b1cdaf956.bundle.js" integrity="sha384-xq1orPfFVIn+iCL5fRm7Y+RtUli2kg0Mq2GEINQLdH0VZWtsCbgkdo9Ctp7Qv1Wv" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/83756.2af9c5378c.bundle.js" integrity="sha384-BNSDA4qLGAgdN05wcJhRDU4dXcTLQO5SbEQ4ecFfuxaficnaTcPCJnrHw02KX4ty" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/2476.f0f26000c2.bundle.js" integrity="sha384-xg1gzxenGf/FTz9T6V7q+VyjtALaTCCCpXJMmqBEtHRISXusYVB2MK8wFsgx3xRr" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/17368.6e993bd2cd.bundle.js" integrity="sha384-6UO3k7bKGaw08W4mXBOkpP+iVdvH5GB2VXP5ODa0ppO85+Q2YA+aGGgIW1ExB/hz" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/77306.d56a069154.bundle.js" integrity="sha384-MgConiqOHxu0fFtOOgyQ8qTmx4DMg+KOX2X+ZrlPHDRsgZcTUkafIQ5N+OqUdSTQ" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/17926.c9fb0d3c1d.bundle.js" integrity="sha384-8sPrkQqg+tP5ex/Qk+Y3TfPBc2DarANhdVxbyShqR0JnP3rnVN32Yrbwktdxxvkh" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/32929.4fb6f5a049.bundle.js" integrity="sha384-2ua+ytCA5VkiX1k9Rly+VGi+wCkja/xVg5+6U1FOZY3kCsX9b6JEMWGySLHIKlaN" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/35298.b5122cebef.bundle.js" integrity="sha384-sWDy+kGxjp4fEs4A4CQpYKQ8zlqi79/v0cuZotkKlqR6+0GFSDQnUz07K10FG5G4" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/4445.7e9e017891.bundle.js" integrity="sha384-P0ku0qbbSIAzL/rBypjsOeqbULbBami1juZ3Y2G4C12Y2voliPY1negSi3ba2EdB" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/58215.21acde3599.bundle.js" integrity="sha384-yMVOqQS/8jgCr2PNP2djGo4K3S+OsjDJiobzEI5ua5DciJVW7hpwryC31M4z1Au4" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/72829.d8d290af5c.bundle.js" integrity="sha384-Hcc4AmEDVxBPcG/LXoZpoVW5WENQfP3eUsscY7t/Y+Fp4Tv28S77BDjeSsBqCNjz" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/64357.7f334f4ccc.bundle.js" integrity="sha384-fKKRQIXwlo1sZnhw4/P5ULv5uiV7MwvwbyTRN9AdbZREtKz6HNJpgr8UWa9yVyrg" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/6671.330aa897e4.bundle.js" integrity="sha384-8+Lu0Qpc/20Bcljp3ZnIH4Rf1aVIn1+vug+UF0w8xcrp1UJWk4rEWVFeXvImpFim" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/95145.01776c225a.bundle.js" integrity="sha384-kd1KkJB+METhyiVq1e/n0xSZW7NbPwSSA6iBUDvyLgNOG1ym/B0nuY8g98dfL0Ir" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/65716.f3c74ae7af.bundle.js" integrity="sha384-zSUqOncEkvgQ/FAJn+os+afw6bzKR1pAmePpdAGSr5rXSK4igG9wFp1CIhnWeoqT" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/50130.92d751f46b.bundle.js" integrity="sha384-7wVFDN5WhuT58rPzgvdxrBa84yDUWjPA2owasu7/p7AnJIiFbFUO/licYi7iHrKp" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/83781.5b5a567bdf.bundle.js" integrity="sha384-bxsH9KKhlODPXJcP08w6LrQfMokxnBvySTBIe78OqObLry6V/xprvz+UPZ58VPdb" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/53901.0ead36220e.bundle.js" integrity="sha384-I5LSpjxZpOSqdHNr86VQeQ0TWUY51fKWkBQtIw4g7zw8GFLh7jwExGFM08KRlGrn" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/main.d5ef20ee.b186941aba.bundle.js" integrity="sha384-57sg+lTZZWTM2OQ4vqKTjFY2+SfRYz2pEumQ+4lnHDb4tUgsAcmVuqEYvWCEGUEx" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/main.720be5d3.96fe296453.bundle.js" integrity="sha384-IEyWb3BKMiOmCGZcEa17sqeAsY8qkMfMeR84rRBvLGkTljcZGxkTV8qZaRvLn9HP" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/main.59b328bc.f18c742187.bundle.js" integrity="sha384-R8o9UNlJiA+wJlIYwVvTGqf6wm5Io8/RuwV7M/WsDppD7L2ljp2OwSTMV5/k10Fw" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/main.a9b3adbf.912612721b.bundle.js" integrity="sha384-OsXOC1VWxW3lMc2GP8KOOgHdd0KcLBqsI/COzvDkvg9ZTheQKvSETHW3Ou0jut15" crossorigin="anonymous"></script><script defer="defer" src="https://app.onekeytest.com/main.053349f7.bf38a5e294.bundle.js" integrity="sha384-jDxJuz1EHnNqTf9tJz1e+ie4VVMyJZJPKOi+HZ+jWvWgwjI/NCM+PXAYErt4UwKW" crossorigin="anonymous"></script></head><body class="onekey-body" data-platform="web" data-browser="" data-filename="-not-correct-in-ext"><noscript><form action="" style="background-color: #fff;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 9999;"><div style="font-size: 18px;
+            font-family: Helvetica, sans-serif;
+            line-height: 24px;
+            margin: 10%;
+            width: 80%;"><p>Oh no! It looks like JavaScript is not enabled in your browser.</p><p style="margin: 20px 0"><button type="submit" style="background-color: #4630eb;
+                border-radius: 100px;
+                border: none;
+                box-shadow: none;
+                color: #fff;
+                cursor: pointer;
+                font-weight: bold;
+                line-height: 20px;
+                padding: 6px 16px;">Reload</button></p></div></form></noscript><div id="root"></div><script>(()=>{
+          const rootElement = document.getElementById('root');
+          if (rootElement) {
+            rootElement.setAttribute('data-html-render-time', Date.now().toString());
+          }
+        })();</script></body></html>
